@@ -1,0 +1,73 @@
+# Discussion System Configuration
+# 複数AIモデル討論システム設定
+
+version: "1.0.0"
+
+# Language setting (affects agent responses)
+language: ja  # ja, en
+
+# Participating models
+models:
+  - id: claude
+    name: "Claude"
+    cli: "claude --dangerously-skip-permissions"
+    model: "claude-opus-4-6"
+    pane: 0
+    color: "1;35"  # Purple
+    role: "司会進行 + 論理的分析と構造化思考"
+
+  - id: codex
+    name: "Codex"
+    cli: "codex --dangerously-bypass-approvals-and-sandbox"
+    model: "OpenAI Codex"
+    pane: 1
+    color: "1;33"  # Yellow
+    role: "技術的実装と実用性を重視する"
+
+  - id: gemini
+    name: "Gemini"
+    cli: "gemini -y"
+    model: "gemini-2.5-pro"
+    pane: 2
+    color: "1;32"  # Green
+    role: "創造的発想と多角的視点を提供する"
+
+# Visualizer settings
+visualizer:
+  pane: 3
+  cli: "gemini -y"
+  model: "gemini-2.5-pro"
+  color: "1;36"  # Cyan
+  role: "リッチ可視化（Mermaid図・画像生成・インフォグラフィック）"
+  show_summary: true
+  show_consensus: true
+  show_timeline: true
+
+# Discussion rules
+discussion:
+  max_rounds: 10
+  turn_timeout: 120  # seconds per turn
+  require_response_to_others: true
+  consensus_threshold: 2  # minimum models agreeing
+
+  phases:
+    - name: "opening"
+      description: "各自の初期見解を述べる"
+      rounds: 1
+    - name: "debate"
+      description: "意見交換と議論"
+      rounds: 5
+    - name: "synthesis"
+      description: "合意形成と結論"
+      rounds: 2
+
+# Communication protocol
+# パスは discussions/{topic_id}/ 配下に展開される
+protocol:
+  discussions_dir: "discussions/"
+  topic_file: "discussions/{topic_id}/queue/topic.yaml"
+  turns_dir: "discussions/{topic_id}/queue/turns/"
+  responses_dir: "discussions/{topic_id}/queue/responses/"
+  visualizer_output: "discussions/{topic_id}/visualizer/dashboard.md"
+  visualizer_images: "discussions/{topic_id}/visualizer/images/"
+  consensus_file: "discussions/{topic_id}/queue/consensus.yaml"
