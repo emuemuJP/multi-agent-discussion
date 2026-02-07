@@ -71,6 +71,25 @@ check_requirements() {
     fi
     echo -e "${GREEN}✓ gemini CLI${NC}"
 
+    # Check Python venv and google-genai (for Nano Banana Pro image generation)
+    if [ -f "$DISCUSSION_DIR/.venv/bin/python3" ]; then
+        if "$DISCUSSION_DIR/.venv/bin/python3" -c "from google import genai" 2>/dev/null; then
+            echo -e "${GREEN}✓ google-genai (Nano Banana Pro)${NC}"
+        else
+            echo -e "${YELLOW}⚠ google-genai not installed. Run: .venv/bin/pip install google-genai Pillow${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠ Python venv not found. Run: python3 -m venv .venv && .venv/bin/pip install google-genai Pillow${NC}"
+    fi
+
+    # Check GEMINI_API_KEY
+    if [ -n "$GEMINI_API_KEY" ]; then
+        echo -e "${GREEN}✓ GEMINI_API_KEY${NC}"
+    else
+        echo -e "${YELLOW}⚠ GEMINI_API_KEY not set. Image generation will not work.${NC}"
+        echo -e "${YELLOW}  Get your key at: https://aistudio.google.com/apikey${NC}"
+    fi
+
     echo ""
 }
 

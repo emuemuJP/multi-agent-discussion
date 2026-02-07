@@ -18,6 +18,38 @@ Claude が司会進行を兼務し、Visualizer は Gemini CLI によるリッ�
 └──────────────────────────┴──────────────────────────────────┘
 ```
 
+## 前提条件
+
+### CLI のインストール
+
+| CLI | インストール |
+|-----|-------------|
+| Claude Code | `npm install -g @anthropic-ai/claude-code` |
+| Gemini CLI | `npm install -g @anthropic-ai/claude-code && npm install -g @anthropic-ai/gemini-cli` もしくは `npm install -g @anthropic-ai/gemini-cli` |
+| Codex CLI | `npm install -g @openai/codex` |
+| tmux | `brew install tmux` (macOS) |
+
+### 認証の確認
+
+各 CLI は初回起動時にブラウザで OAuth 認証を行う。**討論開始前に全 CLI が認証済みであることを確認すること。**
+
+```bash
+# Claude Code — 認証状態の確認
+claude doctor
+# 未認証の場合: claude login でブラウザが開く
+
+# Gemini CLI — 認証確認（起動して応答すれば OK）
+gemini
+# 未認証の場合: 初回起動時にブラウザで Google アカウント認証
+
+# Codex CLI — 認証確認
+codex login status
+# 未認証の場合: codex login でブラウザが開く（ChatGPT アカウント）
+```
+
+> **Note**: API キーによる認証も可能（`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`）。
+> 詳細は各 CLI のドキュメントを参照。
+
 ## クイックスタート
 
 ```bash

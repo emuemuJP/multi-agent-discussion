@@ -42,6 +42,13 @@ visualizer:
   show_summary: true
   show_consensus: true
   show_timeline: true
+  image_generation:
+    model: "gemini-3-pro-image-preview"
+    script: "scripts/generate_image.py"
+    venv_python: ".venv/bin/python3"
+    default_size: "2K"
+    default_aspect_ratio: "4:3"
+    api_key_env: "GEMINI_API_KEY"
 
 # Discussion rules
 discussion:
@@ -51,12 +58,15 @@ discussion:
   consensus_threshold: 2  # minimum models agreeing
 
   phases:
-    - name: "opening"
-      description: "各自の初期見解を述べる"
+    - name: "brainstorming"
+      description: "各自が3案以上の多様なアイデアを出す（幅出しフェーズ）"
+      rounds: 1
+    - name: "narrowing"
+      description: "アイデアを評価し、有望な2-3案に絞り込む"
       rounds: 1
     - name: "debate"
-      description: "意見交換と議論"
-      rounds: 5
+      description: "絞り込んだ案について深い議論と比較検討"
+      rounds: 3
     - name: "synthesis"
       description: "合意形成と結論"
       rounds: 2
@@ -71,3 +81,10 @@ protocol:
   visualizer_output: "discussions/{topic_id}/visualizer/dashboard.md"
   visualizer_images: "discussions/{topic_id}/visualizer/images/"
   consensus_file: "discussions/{topic_id}/queue/consensus.yaml"
+  status_file: "discussions/{topic_id}/queue/status.yaml"
+
+# Status tracking (file-based completion verification)
+# send-keys 通知は best-effort。ファイル存在が完了の真の証拠。
+status:
+  check_on_any_input: true
+  user_recovery_command: "status"

@@ -34,18 +34,65 @@ discussions/{topic_id}/
 2. **トピック確認**: 通知で指定された `topic.yaml` を読む
 3. **発言準備**: 他のモデルの発言を確認
 4. **発言**: 通知で指定されたパスに自分の意見を書く
-5. **通知**: Claude（司会進行）に send-keys で発言完了を通知
+5. **通知（best-effort）**: Claude（司会進行）に send-keys で発言完了を通知。
+   **ファイルの存在自体が完了の真の証拠** であり、通知が届かなくても Claude はファイル存在で確認できる。
 
 ### 発言フォーマット
 
+#### Brainstorming フェーズ（幅出し）
+
 ```yaml
-# discussions/{topic_id}/queue/turns/round_N_gemini.yaml
+model: gemini
+round: 1
+timestamp: "YYYY-MM-DDTHH:MM:SS"
+phase: "brainstorming"
+
+# 3案以上の多様なアイデア（質より量、批判禁止、突飛な案も歓迎）
+proposals:
+  - id: "A"
+    title: "アイデアAのタイトル"
+    summary: "概要"
+    appeal: "このアイデアの魅力・ユニークさ"
+  - id: "B"
+    title: "アイデアBのタイトル"
+    summary: "概要"
+    appeal: "このアイデアの魅力・ユニークさ"
+  - id: "C"
+    title: "アイデアCのタイトル"
+    summary: "概要"
+    appeal: "このアイデアの魅力・ユニークさ"
+
+# アイデアの幅を広げるヒント
+wild_card: "最も突飛だが面白い可能性"
+```
+
+#### Narrowing フェーズ（絞り込み）
+
+```yaml
 model: gemini
 round: N
 timestamp: "YYYY-MM-DDTHH:MM:SS"
-phase: "opening" | "debate" | "synthesis"
+phase: "narrowing"
 
-# 自分の主張
+# 全アイデアから有望な2-3案を選択
+selected_ideas:
+  - id: "codex_A"  # 元のエージェントとIDで参照
+    reason: "選んだ理由（創造的観点から）"
+  - id: "gemini_B"
+    reason: "選んだ理由"
+
+# 新しい組み合わせ提案
+combination_idea: "既存アイデアを組み合わせた新案の提案"
+```
+
+#### Debate / Synthesis フェーズ
+
+```yaml
+model: gemini
+round: N
+timestamp: "YYYY-MM-DDTHH:MM:SS"
+phase: "debate" | "synthesis"
+
 position:
   summary: "主張を一言で"
   reasoning:
@@ -53,7 +100,6 @@ position:
     - "理由2"
   creative_angle: "ユニークな視点や発想"
 
-# 他モデルへの反応
 responses:
   claude:
     agree: ["同意点"]
@@ -64,12 +110,10 @@ responses:
     disagree: ["反論点"]
     alternative: ["代替案"]
 
-# 新しいアイデア・視点
 new_perspectives:
   - "見落とされている視点"
   - "別の解釈の可能性"
 
-# 合意形成への提案
 consensus_proposal: "合意できそうな点の提案"
 ```
 
@@ -94,10 +138,12 @@ consensus_proposal: "合意できそうな点の提案"
 
 ## Claude（司会進行）への通知方法
 
-発言を書いた後、Claude に発言完了を通知：
+発言ファイルを書き終えたら、**ファイルの存在自体が完了の証拠** となる。
+加えて、best-effort で Claude に send-keys 通知を送る。
+通知が届かなくても、Claude はファイル存在を確認する仕組みがある。
 
 ```bash
-# 発言ファイルを書いた後
+# 発言ファイルを書いた後（best-effort 通知）
 tmux send-keys -t discussion:0.0 "Geminiの発言が完了しました: round_N_gemini.yaml を確認してください"
 sleep 0.5
 tmux send-keys -t discussion:0.0 Enter
@@ -105,10 +151,16 @@ tmux send-keys -t discussion:0.0 Enter
 
 ## 討論フェーズ別の振る舞い
 
-### Opening（開始）フェーズ
-- 独自の視点からトピックを捉える
-- 他では出ないような観点を提示
-- 可能性を広げる発言をする
+### Brainstorming（幅出し）フェーズ
+- **3案以上** の多様なアイデアを出す（質より量）
+- 常識にとらわれない突飛なアイデアも歓迎
+- 異なる軸（例: 保守的 vs 斬新、簡単 vs 凝った）でバリエーションを出す
+- 他モデルのアイデアへの批判は禁止
+
+### Narrowing（絞り込み）フェーズ
+- 全エージェントのアイデアを読み、有望な2-3案を選ぶ
+- **異なるエージェントのアイデアを組み合わせた新案** を積極的に提案する
+- 創造性の観点から評価する
 
 ### Debate（議論）フェーズ
 - 他モデルの盲点を指摘する
@@ -120,28 +172,29 @@ tmux send-keys -t discussion:0.0 Enter
 - 見落とされた可能性を指摘する
 - 将来への示唆を提供する
 
-## サンプル発言
+## サンプル発言（Brainstorming フェーズ）
 
 ```yaml
 model: gemini
 round: 1
 timestamp: "2026-01-28T10:05:00"
-phase: "opening"
+phase: "brainstorming"
 
-position:
-  summary: "ユーザー体験を中心に据えるべき"
-  reasoning:
-    - "技術は手段であり目的ではない"
-    - "最終的な価値はユーザーが感じるもの"
-  creative_angle: "逆に、あえて技術制約を設けることで創造性が生まれる可能性"
+proposals:
+  - id: "A"
+    title: "ユーザー体験ファースト"
+    summary: "技術選定よりUXデザインを先行させる"
+    appeal: "最終的な価値はユーザーが感じるもの"
+  - id: "B"
+    title: "あえて制約を楽しむ"
+    summary: "技術制約を創造性のトリガーにする"
+    appeal: "制限があるほど独創的なアイデアが生まれる"
+  - id: "C"
+    title: "愛される不完全さ"
+    summary: "完璧を目指さず '味' のある体験を作る"
+    appeal: "完璧なものより不完全なものの方が人を惹きつける"
 
-responses: {}
-
-new_perspectives:
-  - "失敗からの学びを設計に組み込む視点"
-  - "技術的完璧さより '愛される不完全さ' の可能性"
-
-consensus_proposal: null
+wild_card: "失敗を設計に組み込む — エラーが起きたとき、それ自体がコンテンツになる体験"
 ```
 
 ## 言語

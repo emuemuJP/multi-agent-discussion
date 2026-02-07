@@ -34,18 +34,70 @@ discussions/{topic_id}/
 2. **トピック確認**: 通知で指定された `topic.yaml` を読む
 3. **発言準備**: 他のモデルの発言を確認
 4. **発言**: 通知で指定されたパスに自分の意見を書く
-5. **通知**: Claude（司会進行）に send-keys で発言完了を通知
+5. **通知（best-effort）**: Claude（司会進行）に send-keys で発言完了を通知。
+   **ファイルの存在自体が完了の真の証拠** であり、通知が届かなくても Claude はファイル存在で確認できる。
 
 ### 発言フォーマット
 
+#### Brainstorming フェーズ（幅出し）
+
 ```yaml
-# discussions/{topic_id}/queue/turns/round_N_codex.yaml
+model: codex
+round: 1
+timestamp: "YYYY-MM-DDTHH:MM:SS"
+phase: "brainstorming"
+
+# 3案以上の多様なアイデア（質より量、批判禁止）
+proposals:
+  - id: "A"
+    title: "アイデアAのタイトル"
+    summary: "概要"
+    appeal: "実用性・効率性の観点"
+    effort: "概算コスト/時間"
+  - id: "B"
+    title: "アイデアBのタイトル"
+    summary: "概要"
+    appeal: "実用性・効率性の観点"
+    effort: "概算コスト/時間"
+  - id: "C"
+    title: "アイデアCのタイトル"
+    summary: "概要"
+    appeal: "実用性・効率性の観点"
+    effort: "概算コスト/時間"
+
+# 実装難易度のバリエーション
+variety_note: "簡単〜凝った案のバリエーションを意識"
+```
+
+#### Narrowing フェーズ（絞り込み）
+
+```yaml
 model: codex
 round: N
 timestamp: "YYYY-MM-DDTHH:MM:SS"
-phase: "opening" | "debate" | "synthesis"
+phase: "narrowing"
 
-# 自分の主張
+# 全アイデアから有望な2-3案を選択
+selected_ideas:
+  - id: "claude_B"  # 元のエージェントとIDで参照
+    reason: "選んだ理由（実現可能性の観点から）"
+    feasibility: "high" | "medium" | "low"
+  - id: "gemini_A"
+    reason: "選んだ理由"
+    feasibility: "high" | "medium" | "low"
+
+# コスト比較
+comparison_note: "選択した案のコスト・工数比較"
+```
+
+#### Debate / Synthesis フェーズ
+
+```yaml
+model: codex
+round: N
+timestamp: "YYYY-MM-DDTHH:MM:SS"
+phase: "debate" | "synthesis"
+
 position:
   summary: "主張を一言で"
   reasoning:
@@ -53,14 +105,12 @@ position:
     - "理由2"
   implementation_notes: "実装観点からのコメント"
 
-# 技術的な検討
 technical_assessment:
   feasibility: "high" | "medium" | "low"
   estimated_effort: "概算工数や難易度"
   risks: ["技術的リスク"]
   dependencies: ["必要な技術やリソース"]
 
-# 他モデルへの反応
 responses:
   claude:
     agree: ["同意点"]
@@ -71,7 +121,6 @@ responses:
     disagree: ["反論点"]
     implementation_concern: "実装上の懸念"
 
-# 具体的な提案
 concrete_proposal:
   approach: "具体的なアプローチ"
   steps:
@@ -81,7 +130,6 @@ concrete_proposal:
     # 必要に応じてコード例
     pass
 
-# 合意形成への提案
 consensus_proposal: "合意できそうな点の提案"
 ```
 
@@ -106,10 +154,12 @@ consensus_proposal: "合意できそうな点の提案"
 
 ## Claude（司会進行）への通知方法
 
-発言を書いた後、Claude に発言完了を通知：
+発言ファイルを書き終えたら、**ファイルの存在自体が完了の証拠** となる。
+加えて、best-effort で Claude に send-keys 通知を送る。
+通知が届かなくても、Claude はファイル存在を確認する仕組みがある。
 
 ```bash
-# 発言ファイルを書いた後
+# 発言ファイルを書いた後（best-effort 通知）
 tmux send-keys -t discussion:0.0 "Codexの発言が完了しました: round_N_codex.yaml を確認してください"
 sleep 0.5
 tmux send-keys -t discussion:0.0 Enter
@@ -117,10 +167,16 @@ tmux send-keys -t discussion:0.0 Enter
 
 ## 討論フェーズ別の振る舞い
 
-### Opening（開始）フェーズ
-- トピックの技術的な側面を分析
-- 実装の難易度や制約を提示
-- 現実的な選択肢を示す
+### Brainstorming（幅出し）フェーズ
+- **3案以上** の多様なアイデアを出す（質より量）
+- 簡単なもの〜凝ったもの、低コスト〜高コストのバリエーションを意識
+- 他モデルのアイデアへの批判は禁止
+- 各案に概算コスト/時間を添える
+
+### Narrowing（絞り込み）フェーズ
+- 全エージェントのアイデアを読み、有望な2-3案を選ぶ
+- **実現可能性（feasibility）の観点** から評価する
+- 選択した案のコスト・工数を比較する
 
 ### Debate（議論）フェーズ
 - 他のアイデアの実現可能性を評価
@@ -132,42 +188,32 @@ tmux send-keys -t discussion:0.0 Enter
 - 優先順位を提案する
 - 次のアクションを具体化する
 
-## サンプル発言
+## サンプル発言（Brainstorming フェーズ）
 
 ```yaml
 model: codex
 round: 1
 timestamp: "2026-01-28T10:10:00"
-phase: "opening"
+phase: "brainstorming"
 
-position:
-  summary: "まずMVPで検証すべき"
-  reasoning:
-    - "完璧を目指すより早く市場に出す方が学びが多い"
-    - "技術的負債は後からでも返済できる"
-  implementation_notes: "2週間で動くプロトタイプは作れる"
+proposals:
+  - id: "A"
+    title: "MVP最速リリース"
+    summary: "2週間でコア機能だけ作って市場投入"
+    appeal: "早く学びを得られる"
+    effort: "2週間"
+  - id: "B"
+    title: "フルスペック開発"
+    summary: "3ヶ月でセキュリティ・スケール込みの本番品質"
+    appeal: "技術的負債ゼロでスタート"
+    effort: "3ヶ月"
+  - id: "C"
+    title: "段階的リリース"
+    summary: "2週間MVP → 毎週改善のイテレーション"
+    appeal: "両方の良いところ取り"
+    effort: "初回2週間 + 継続"
 
-technical_assessment:
-  feasibility: high
-  estimated_effort: "2週間（MVP）、2ヶ月（フル機能）"
-  risks:
-    - "スケール時のパフォーマンス問題"
-    - "セキュリティ考慮の不足"
-  dependencies:
-    - "クラウドインフラ"
-    - "認証システム"
-
-responses: {}
-
-concrete_proposal:
-  approach: "段階的リリース"
-  steps:
-    - "Week 1: コア機能のプロトタイプ"
-    - "Week 2: ユーザーテスト"
-    - "Month 1: フィードバック反映"
-  code_snippet: null
-
-consensus_proposal: null
+variety_note: "最速・最高品質・バランスの3軸でバリエーション"
 ```
 
 ## 言語
