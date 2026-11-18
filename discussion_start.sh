@@ -226,31 +226,30 @@ send_instructions() {
 
     sleep 3  # Wait for Claude CLI to initialize
 
+    # Instead of sending full instruction file contents (which exceeds tmux send-keys buffer),
+    # send a short message telling each agent to read its own instruction file.
+
     # Send instruction to Claude
     echo -e "  ${PURPLE}Instructing Claude...${NC}"
-    CLAUDE_INST=$(cat "$DISCUSSION_DIR/instructions/claude.md" 2>/dev/null || echo "You are Claude, a discussion participant. Read instructions/claude.md for details.")
-    tmux send-keys -t "$SESSION_NAME:0.0" "$CLAUDE_INST"
+    tmux send-keys -t "$SESSION_NAME:0.0" "Read instructions/claude.md and follow those instructions. You are the moderator (司会進行) of the discussion system. Wait for the user to provide a discussion topic."
     sleep 0.5
     tmux send-keys -t "$SESSION_NAME:0.0" Enter
 
     # Send instruction to Gemini
     echo -e "  ${GREEN}Instructing Gemini...${NC}"
-    GEMINI_INST=$(cat "$DISCUSSION_DIR/instructions/gemini.md" 2>/dev/null || echo "You are Gemini, a discussion participant. Read instructions/gemini.md for details.")
-    tmux send-keys -t "$SESSION_NAME:0.2" "$GEMINI_INST"
+    tmux send-keys -t "$SESSION_NAME:0.2" "Read instructions/gemini.md and follow those instructions. You are Gemini, the creative thinker in the discussion system. Wait for Claude to send you a topic via tmux."
     sleep 0.5
     tmux send-keys -t "$SESSION_NAME:0.2" Enter
 
     # Send instruction to Codex
     echo -e "  ${YELLOW}Instructing Codex...${NC}"
-    CODEX_INST=$(cat "$DISCUSSION_DIR/instructions/codex.md" 2>/dev/null || echo "You are Codex, a discussion participant. Read instructions/codex.md for details.")
-    tmux send-keys -t "$SESSION_NAME:0.1" "$CODEX_INST"
+    tmux send-keys -t "$SESSION_NAME:0.1" "Read instructions/codex.md and follow those instructions. You are Codex, the technical implementer in the discussion system. Wait for Claude to send you a topic via tmux."
     sleep 0.5
     tmux send-keys -t "$SESSION_NAME:0.1" Enter
 
     # Send instruction to Visualizer
     echo -e "  ${CYAN}Instructing Visualizer...${NC}"
-    VIS_INST=$(cat "$DISCUSSION_DIR/instructions/visualizer.md" 2>/dev/null || echo "You are the Visualizer. Read instructions/visualizer.md for details.")
-    tmux send-keys -t "$SESSION_NAME:0.3" "$VIS_INST"
+    tmux send-keys -t "$SESSION_NAME:0.3" "Read instructions/visualizer.md and follow those instructions. You are the Visualizer in the discussion system. Wait for Claude to request visualizations via tmux."
     sleep 0.5
     tmux send-keys -t "$SESSION_NAME:0.3" Enter
 
